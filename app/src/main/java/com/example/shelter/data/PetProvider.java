@@ -3,18 +3,15 @@ package com.example.shelter.data;
 import android.content.ContentProvider;
 import android.content.ContentUris;
 import android.content.ContentValues;
-import android.content.Intent;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.net.ParseException;
 import android.net.Uri;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.net.URI;
 
 public class PetProvider extends ContentProvider {
     public static final String LOG_TAG = PetProvider.class.getSimpleName();
@@ -100,12 +97,69 @@ public class PetProvider extends ContentProvider {
         return ContentUris.withAppendedId(uri, rowId);
     }
     @Override
-    public int delete(@NonNull Uri uri, @Nullable String selection, @Nullable String[] selectionArgs) {
-        return 0;
+    public int delete(@NonNull Uri uri, @Nullable String selection, @Nullable String[] selectionArgs)
+    {
+        int noDeletedRows = deletePet(uri,selection,selectionArgs);
+        return noDeletedRows;
     }
-
+    private int deletePet(Uri uri, String selection, String[] selectionArgs){
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        int match = uriMatcher.match(uri);
+        int noOfDeletedRows;
+        switch (match){
+            case PETS:
+                noOfDeletedRows = db.delete(PetContract.PetEntry.TABLE_NAME,selection,selectionArgs);
+                return noOfDeletedRows;
+            case PETS_ID:
+                selection = PetContract.PetEntry._ID+"=?";
+                selectionArgs = new String[]{String.valueOf(ContentUris.parseId(uri))};
+                noOfDeletedRows = db.delete(PetContract.PetEntry.TABLE_NAME,selection,selectionArgs);
+                return noOfDeletedRows;
+            default:
+                throw new IllegalStateException("Deletion is not supported for" + uri);
+        }
+    }
     @Override
     public int update(@NonNull Uri uri, @Nullable ContentValues values, @Nullable String selection, @Nullable String[] selectionArgs) {
-        return 0;
+        final int match = uriMatcher.match(uri);
+        switch (match) {
+            case PETS:
+                return updatePet(uri, values, selection, selectionArgs);
+            case PETS_ID:
+                // For the PET_ID code, extract out the ID from the URI,
+                // so we know which row to update. Selection will be "_id=?" and selection
+                // arguments will be a String array containing the actual ID.
+                selection = PetContract.PetEntry._ID + "=?";
+                selectionArgs = new String[] { String.valueOf(ContentUris.parseId(uri)) };
+                return updatePet(uri, values, selection, selectionArgs);
+            default:
+                throw new IllegalArgumentException("Update is not supported for " + uri);
+        }
+    }
+    private int updatePet(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+        if(values.size()==0)
+            return 0;
+        if(values.containsKey(PetContract.PetEntry.COLUMN_PET_NAME)){
+            String name = values.getAsString(PetContract.PetEntry.COLUMN_PET_NAME);
+            if(name==null){
+                throw new IllegalArgumentException("Pet name should not be null");
+            }
+        }
+        if(values.containsKey(PetContract.PetEntry.COLUMN_PET_BREED)){
+            String breed = values.getAsString(PetContract.PetEntry.COLUMN_PET_BREED);
+            if(breed==null){
+                throw new IllegalArgumentException("Pet breed should not be null");
+            }
+        }
+        if(values.containsKey(PetContract.PetEntry.COLUMN_PET_WEIGHT)){
+            Integer weight = values.getAsInteger(PetContract.PetEntry.COLUMN_PET_WEIGHT);
+            if(weight == null|| weight < 0){
+                throw new IllegalArgumentException("Pet weight should not be less than 0/null");
+            }
+        }
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        int rowUpdated;
+        rowUpdated = db.update(PetContract.PetEntry.TABLE_NAME,values,selection,selectionArgs);
+        return rowUpdated;
     }
 }
