@@ -3,6 +3,7 @@ package com.example.shelter.data;
 import android.content.ContentProvider;
 import android.content.ContentUris;
 import android.content.ContentValues;
+import android.content.Intent;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -73,14 +74,28 @@ public class PetProvider extends ContentProvider {
         }
     }
     private Uri insertPet(Uri uri, ContentValues values) {
+        //Sanity Checking :
+        String petName = values.getAsString(PetContract.PetEntry.COLUMN_PET_NAME);
+        if(petName==null)
+            throw new IllegalArgumentException("Pet name should not be null");
+
+        String petBreed = values.getAsString(PetContract.PetEntry.COLUMN_PET_BREED);
+        if(petBreed==null)
+            throw new IllegalArgumentException("Pet breed should not be null");
+
+        int petWeight = values.getAsInteger(PetContract.PetEntry.COLUMN_PET_WEIGHT);
+        if(petWeight < 0)
+            throw new IllegalArgumentException("Pet weight should not be less than 0");
+
+        Integer petGender = values.getAsInteger(PetContract.PetEntry.COLUMN_PET_GENDER);
+        if(petGender==null|| !PetContract.PetEntry.isValidGender(petGender))
+            throw new IllegalArgumentException("Pet name should not be null");
 
         SQLiteDatabase db = dbHelper.getWritableDatabase();
-        
         long rowId = db.insert(PetContract.PetEntry.TABLE_NAME,null,values);
         if(rowId==-1){
             Log.e(LOG_TAG, "Failed to insert row for"+uri);
         }
-        // Once we know the ID of the new row in the table,
         // return the new URI with the ID appended to the end of it
         return ContentUris.withAppendedId(uri, rowId);
     }
