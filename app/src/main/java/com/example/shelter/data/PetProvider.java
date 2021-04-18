@@ -8,7 +8,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -53,10 +52,18 @@ public class PetProvider extends ContentProvider {
 
     @Nullable
     @Override
-    public String getType(@NonNull Uri uri) {
-        return null;
+    public String getType(@NonNull Uri uri)
+    {
+        int match = uriMatcher.match(uri);
+        switch(match){
+            case PETS:
+                return PetContract.PetEntry.CONTENT_LIST_TYPE;
+            case PETS_ID:
+                return PetContract.PetEntry.CONTENT_ITEM_TYPE;
+            default:
+                throw new IllegalStateException("Unknown URI " + uri + " with match " + match);
+        }
     }
-
     @Nullable
     @Override
     public Uri insert(@NonNull Uri uri, @Nullable ContentValues values)
@@ -162,4 +169,5 @@ public class PetProvider extends ContentProvider {
         rowUpdated = db.update(PetContract.PetEntry.TABLE_NAME,values,selection,selectionArgs);
         return rowUpdated;
     }
+
 }
