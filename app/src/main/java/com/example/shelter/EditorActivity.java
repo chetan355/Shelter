@@ -1,7 +1,7 @@
 package com.example.shelter;
 
 import android.content.ContentValues;
-import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -17,8 +17,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NavUtils;
 
+import com.example.shelter.data.PetContract;
 import com.example.shelter.data.PetContract.PetEntry;
-import com.example.shelter.data.PetHelperDb;
 
 public class EditorActivity extends AppCompatActivity {
     /** EditText field to enter the pet's name */
@@ -43,12 +43,11 @@ public class EditorActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_editor);
-
         // Find all relevant views that we will need to read user input from
-        mNameEditText = (EditText) findViewById(R.id.edit_pet_name);
-        mBreedEditText = (EditText) findViewById(R.id.edit_pet_breed);
-        mWeightEditText = (EditText) findViewById(R.id.edit_pet_weight);
-        mGenderSpinner = (Spinner) findViewById(R.id.spinner_gender);
+        mNameEditText = findViewById(R.id.edit_pet_name);
+        mBreedEditText = findViewById(R.id.edit_pet_breed);
+        mWeightEditText = findViewById(R.id.edit_pet_weight);
+        mGenderSpinner = findViewById(R.id.spinner_gender);
         setupSpinner();
     }
     /**
@@ -56,24 +55,18 @@ public class EditorActivity extends AppCompatActivity {
      */
     private void insertPet()
     {
-        PetHelperDb mHelper = new PetHelperDb(this);
-
-        SQLiteDatabase db = mHelper.getWritableDatabase();
-
         ContentValues values = new ContentValues();
         values.put(PetEntry.COLUMN_PET_NAME, String.valueOf(mNameEditText.getText()).trim());
         values.put(PetEntry.COLUMN_PET_BREED, String.valueOf(mBreedEditText.getText()).trim());
         values.put(PetEntry.COLUMN_PET_GENDER, mGender);
         int weight = Integer.parseInt(mWeightEditText.getText().toString());
         values.put(PetEntry.COLUMN_PET_WEIGHT, weight);
-        long rowInsertId = db.insert(PetEntry.TABLE_NAME,null,values);
-//        Log.e("EditorActivity", "insertPet: "+rowInsertId );
-        if (rowInsertId == -1) {
-            // If the row ID is -1, then there was an error with insertion.
-            Toast.makeText(this, "Error with saving pet", Toast.LENGTH_SHORT).show();
-        } else {
-            // Otherwise, the insertion was successful and we can display a toast with the row ID.
-            Toast.makeText(this, "Pet saved with row id: " + rowInsertId, Toast.LENGTH_SHORT).show();
+        Uri newUri = getContentResolver().insert(PetContract.CONTENT_URI,values);
+
+        if(newUri==null){
+            Toast.makeText(this,R.string.insertion_failed,Toast.LENGTH_SHORT).show();
+        }else{
+            Toast.makeText(this,R.string.insertion_success,Toast.LENGTH_SHORT).show();
         }
     }
     private void setupSpinner() {
@@ -130,6 +123,7 @@ public class EditorActivity extends AppCompatActivity {
                 insertPet();
                 finish();
                 Log.e("EditorActivity", "onOptionsItemSelected: "+"Success");
+                break;
 //                displayDatabaseInfo();
             // Respond to a click on the "Delete" menu option
             case R.id.action_delete:
@@ -140,6 +134,8 @@ public class EditorActivity extends AppCompatActivity {
                 // Navigate back to parent activity (CatalogActivity)
                 NavUtils.navigateUpFromSameTask(this);
                 return true;
+            default:
+                throw new IllegalStateException("Unexpected value: " + item.getItemId());
         }
         return super.onOptionsItemSelected(item);
     }

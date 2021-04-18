@@ -45,4 +45,7 @@
 
         <!-- Label for dropdown menu option if the pet is female [CHAR LIMIT=20] -->
         <string name="gender_female">Female</string>
+        <string name="insertion_failed">Pet insertion failed</string>
+
+        <string name="insertion_success">Pet insertion succesful</string>
 </resources>
