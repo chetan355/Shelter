@@ -110,6 +110,9 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
                 }
             }
         });
+        // Create and show the AlertDialog
+        AlertDialog alertDialog = builder.create();
+        alertDialog.show();
     }
 //when user hit back or Up button  :
     @Override
