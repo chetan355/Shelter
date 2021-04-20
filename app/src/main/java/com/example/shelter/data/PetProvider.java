@@ -1,6 +1,7 @@
 package com.example.shelter.data;
 
 import android.content.ContentProvider;
+import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.UriMatcher;
@@ -47,6 +48,7 @@ public class PetProvider extends ContentProvider {
             default:
                 throw new IllegalArgumentException("Cannot query unknown found"+uri);
         }
+        cursor.setNotificationUri(getContext().getContentResolver(),uri);
         return cursor;
     }
 
@@ -100,6 +102,7 @@ public class PetProvider extends ContentProvider {
         if(rowId==-1){
             Log.e(LOG_TAG, "Failed to insert row for"+uri);
         }
+        getContext().getContentResolver().notifyChange(uri,null);
         // return the new URI with the ID appended to the end of it
         return ContentUris.withAppendedId(uri, rowId);
     }
@@ -116,15 +119,19 @@ public class PetProvider extends ContentProvider {
         switch (match){
             case PETS:
                 noOfDeletedRows = db.delete(PetContract.PetEntry.TABLE_NAME,selection,selectionArgs);
-                return noOfDeletedRows;
+                break;
             case PETS_ID:
                 selection = PetContract.PetEntry._ID+"=?";
                 selectionArgs = new String[]{String.valueOf(ContentUris.parseId(uri))};
                 noOfDeletedRows = db.delete(PetContract.PetEntry.TABLE_NAME,selection,selectionArgs);
-                return noOfDeletedRows;
+                break;
             default:
                 throw new IllegalStateException("Deletion is not supported for" + uri);
         }
+        if(noOfDeletedRows!=0) {
+            getContext().getContentResolver().notifyChange(uri, null);
+        }
+        return noOfDeletedRows;
     }
     @Override
     public int update(@NonNull Uri uri, @Nullable ContentValues values, @Nullable String selection, @Nullable String[] selectionArgs) {
@@ -167,7 +174,9 @@ public class PetProvider extends ContentProvider {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         int rowUpdated;
         rowUpdated = db.update(PetContract.PetEntry.TABLE_NAME,values,selection,selectionArgs);
+        if(rowUpdated!=0){
+            getContext().getContentResolver().notifyChange(uri,null);
+        }
         return rowUpdated;
     }
-
 }
